@@ -1,0 +1,331 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f5f7fa;
+  color: #1d2939;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.admin-page {
+  min-height: 100vh;
+  padding: 48px;
+}
+
+.admin-header {
+  max-width: 1440px;
+  margin: 0 auto 32px;
+}
+
+.eyebrow {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.admin-header h1 {
+  margin: 0;
+  font-size: 32px;
+}
+
+.admin-header p {
+  margin: 10px 0 0;
+}
+
+.admin-layout {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr) 360px;
+  gap: 24px;
+
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.editor-card,
+.question-form-card {
+  background: white;
+  border: 1px solid #e4e7ec;
+  border-radius: 18px;
+}
+
+.editor-card {
+  min-height: 650px;
+  padding: 24px;
+}
+
+.question-form-card {
+  padding: 24px;
+}
+
+.question-form-card h2 {
+  margin: 0 0 28px;
+}
+
+.upload-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 600px;
+
+  border: 2px dashed #d0d5dd;
+  border-radius: 14px;
+
+  cursor: pointer;
+}
+
+.upload-area:hover {
+  background: #f9fafb;
+}
+
+.upload-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 56px;
+  height: 56px;
+
+  margin-bottom: 16px;
+
+  border-radius: 50%;
+  background: #f2f4f7;
+
+  font-size: 28px;
+}
+
+.upload-area strong {
+  margin-bottom: 8px;
+}
+
+.upload-area > span:last-of-type {
+  font-size: 14px;
+}
+
+.editor-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 16px;
+}
+
+.editor-toolbar strong {
+  margin: 0 4px 0 8px;
+  font-size: 20px;
+}
+
+.change-image-button {
+  padding: 9px 14px;
+
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+
+  cursor: pointer;
+}
+
+.image-container {
+  position: relative;
+
+  width: fit-content;
+  max-width: 100%;
+
+  margin: 0 auto;
+
+  overflow: hidden;
+
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+
+  border-radius: 10px;
+}
+
+.question-image {
+  display: block;
+
+  width: auto;
+  max-width: 100%;
+  max-height: 680px;
+
+  object-fit: contain;
+
+  pointer-events: none;
+}
+
+.error-area-box {
+  position: absolute;
+
+  border: 3px solid #ef4444;
+  background: rgba(
+    239,
+    68,
+    68,
+    0.15
+  );
+
+  pointer-events: none;
+}
+
+.error-area-box.dragging {
+  border-style: dashed;
+}
+
+.area-number {
+  position: absolute;
+  top: -14px;
+  left: -14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 28px;
+  height: 28px;
+
+  padding: 0;
+
+  border: none;
+  border-radius: 50%;
+
+  background: #ef4444;
+  color: white;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  pointer-events: auto;
+}
+
+.editor-help {
+  margin: 14px 0 0;
+
+  text-align: center;
+  font-size: 14px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  margin-bottom: 24px;
+}
+
+.form-field label {
+  font-weight: 600;
+}
+
+.form-field small {
+  font-size: 12px;
+}
+
+.error-count {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.input-with-unit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.input-with-unit input {
+  width: 100px;
+  padding: 10px;
+
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+}
+
+textarea {
+  width: 100%;
+  min-height: 130px;
+
+  padding: 12px;
+
+  resize: vertical;
+
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+}
+
+.area-list {
+  margin-bottom: 24px;
+}
+
+.area-list-title {
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.empty-area {
+  padding: 16px;
+
+  border-radius: 8px;
+  background: #f9fafb;
+
+  font-size: 13px;
+  text-align: center;
+}
+
+.area-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 10px 0;
+
+  border-bottom: 1px solid #eaecf0;
+}
+
+.area-list-item button {
+  border: none;
+  background: transparent;
+  color: #d92d20;
+}
+
+.save-button {
+  width: 100%;
+
+  padding: 14px;
+
+  border: none;
+  border-radius: 10px;
+
+  background: #101828;
+  color: white;
+
+  font-weight: 700;
+}
+
+@media (
+  max-width: 1000px
+) {
+  .admin-page {
+    padding: 24px;
+  }
+
+  .admin-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .question-form-card {
+    order: -1;
+  }
+}
