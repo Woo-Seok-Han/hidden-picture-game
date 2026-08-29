@@ -8,7 +8,7 @@ import ErrorAreaEditor from "../components/ErrorAreaEditor";
 import type {
   ErrorArea,
   QuestionForm,
-} from "../types/question";
+} from "../../../domain/question/types";
 
 const initialForm: QuestionForm = {
   imageFile: null,

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { ErrorArea } from "../types/question";
+import type { ErrorArea } from "../../../domain/question/types";
 
 interface Point {
   x: number;

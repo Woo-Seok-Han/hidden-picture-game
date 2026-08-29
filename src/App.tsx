@@ -1,8 +1,12 @@
-import "./App.css";
-import AdminQuestionPage from "./pages/AdminQuestionPage";
+import AdminApp from "./apps/admin/AdminApp";
+import PlayerApp from "./apps/player/PlayerApp";
 
 function App() {
-  return <AdminQuestionPage />;
+  const isAdminPath =
+    window.location.pathname === "/admin" ||
+    window.location.pathname.startsWith("/admin/");
+
+  return isAdminPath ? <AdminApp /> : <PlayerApp />;
 }
 
 export default App;

@@ -1,6 +1,9 @@
 :root {
   font-family:
+    "Pretendard Variable",
     Pretendard,
+    "Noto Sans KR",
+    "Apple SD Gothic Neo",
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
@@ -8,4 +11,24 @@
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f5f7fa;
+  color: #1d2939;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
 }
