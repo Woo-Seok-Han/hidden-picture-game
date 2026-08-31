@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { FormEvent } from "react";
 import CompleteScreen from "./components/CompleteScreen";
 import EntryScreen from "./components/EntryScreen";
@@ -12,6 +12,38 @@ export default function PlayerApp() {
   const [screen, setScreen] = useState<PlayerScreen>("entry");
   const [employeeNumber, setEmployeeNumber] = useState("");
   const [error, setError] = useState("");
+
+  // URL 기반 라우팅
+  useEffect(() => {
+    const handlePopState = () => {
+      const pathname = window.location.pathname;
+      
+      if (pathname.startsWith("/results/")) {
+        const empNumber = pathname.split("/results/")[1];
+        setEmployeeNumber(empNumber);
+        setScreen("results");
+      } else if (pathname === "/complete") {
+        setScreen("complete");
+      } else if (pathname === "/game") {
+        setScreen("game");
+      } else {
+        setScreen("entry");
+        setEmployeeNumber("");
+      }
+    };
+
+    // 초기 경로 처리
+    handlePopState();
+
+    // 브라우저 뒤로/앞으로 이벤트 처리
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  const navigateTo = (path: string) => {
+    window.history.pushState({}, "", path);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  };
 
   const handleEmployeeNumberChange = (value: string) => {
     setEmployeeNumber(value);
@@ -29,25 +61,36 @@ export default function PlayerApp() {
 
     setEmployeeNumber(normalizedEmployeeNumber);
     setError("");
+    
     window.dispatchEvent(
       new CustomEvent("infection-game:start", {
         detail: { employeeNumber: normalizedEmployeeNumber },
       }),
     );
-    setScreen("game");
+
+    navigateTo("/game");
+  };
+
+  const handleGameComplete = () => {
+    navigateTo("/complete");
+  };
+
+  const handleResultsClick = () => {
+    navigateTo(`/results/${employeeNumber}`);
   };
 
   const handleHome = () => {
     setEmployeeNumber("");
-    setScreen("entry");
+    setError("");
+    navigateTo("/");
   };
 
   if (screen === "game") {
-    return <GameScreen onComplete={() => setScreen("complete")} />;
+    return <GameScreen onComplete={handleGameComplete} />;
   }
 
   if (screen === "complete") {
-    return <CompleteScreen onResults={() => setScreen("results")} />;
+    return <CompleteScreen onResults={handleResultsClick} />;
   }
 
   if (screen === "results") {
