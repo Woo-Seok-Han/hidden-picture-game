@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { GameStartResponse, GameResult } from '../api/gameService';
+import { createContext, useContext, useState, useCallback } from 'react';
+import type { ReactNode } from 'react';
+import type { GameResult } from '../api/gameService';
 
 interface GameSession {
   sessionId: string;
@@ -42,6 +43,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useGameContext() {
   const context = useContext(GameContext);
   if (!context) {

@@ -7,11 +7,15 @@ import {
   type Answer,
 } from '../api/gameService';
 
+type StartGameResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
 export function useGameSession() {
   const { session, setSession, isLoading, setIsLoading } = useGameContext();
 
   const startGame = useCallback(
-    async (employeeNumber: string) => {
+    async (employeeNumber: string): Promise<StartGameResult> => {
       setIsLoading(true);
       try {
         const response = await apiStartGame(employeeNumber);
@@ -21,9 +25,14 @@ export function useGameSession() {
             employeeNumber: response.employeeNumber,
             startTime: response.startTime,
           });
-          return true;
+          return { ok: true };
         }
-        return false;
+        return { ok: false, message: '게임을 시작하지 못했습니다. 잠시 후 다시 시도해주세요.' };
+      } catch (error) {
+        return {
+          ok: false,
+          message: error instanceof Error ? error.message : '게임을 시작하지 못했습니다. 잠시 후 다시 시도해주세요.',
+        };
       } finally {
         setIsLoading(false);
       }

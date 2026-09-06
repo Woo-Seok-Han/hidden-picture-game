@@ -4,11 +4,12 @@ import { InfoIcon, SearchIcon } from "./PlayerIcons";
 interface EntryScreenProps {
   employeeNumber: string;
   error: string;
+  isSubmitting?: boolean;
   onEmployeeNumberChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }
 
-export default function EntryScreen({ employeeNumber, error, onEmployeeNumberChange, onSubmit }: EntryScreenProps) {
+export default function EntryScreen({ employeeNumber, error, isSubmitting = false, onEmployeeNumberChange, onSubmit }: EntryScreenProps) {
   return (
     <main className="entry-page">
       <div className="entry-art" aria-hidden="true" />
@@ -30,13 +31,14 @@ export default function EntryScreen({ employeeNumber, error, onEmployeeNumberCha
             inputMode="numeric"
             autoComplete="off"
             value={employeeNumber}
+            disabled={isSubmitting}
             aria-invalid={Boolean(error)}
             aria-describedby={error ? "employee-number-error" : undefined}
             placeholder="사번 6자리를 입력하세요"
             onChange={(event) => onEmployeeNumberChange(event.target.value)}
           />
           {error && <p className="entry-error" id="employee-number-error" role="alert">{error}</p>}
-          <button type="submit">게임 시작</button>
+          <button type="submit" disabled={isSubmitting}>{isSubmitting ? "준비 중..." : "게임 시작"}</button>
         </form>
 
         <aside className="entry-notice">
