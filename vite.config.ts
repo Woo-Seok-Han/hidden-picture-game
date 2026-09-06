@@ -10,15 +10,12 @@ export default defineConfig({
     open: true,
   },
   build: {
-    target: 'ES2020',
+    target: 'es2020',
     sourcemap: false,
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(import.meta.dirname, './src'),
     },
-  },
-  define: {
-    __DEV__: JSON.stringify(process.env.NODE_ENV === 'development'),
   },
 })

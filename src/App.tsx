@@ -18,7 +18,7 @@ import PlayerApp from "./apps/player/PlayerApp";
 function App() {
   useEffect(() => {
     // SPA 라우팅 디버깅
-    if (__DEV__) {
+    if (import.meta.env.DEV) {
       console.log(`[App] Current path: ${window.location.pathname}`);
     }
   }, []);
