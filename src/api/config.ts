@@ -1,9 +1,20 @@
 // API 엔드포인트 설정
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-export const API_ASSET_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, '');
+export const API_ASSET_BASE_URL = (
+  import.meta.env.VITE_API_ASSET_URL || API_BASE_URL.replace(/\/api\/?$/, '')
+).replace(/\/$/, '');
+
+const LOCALHOST_ORIGIN_PATTERN = /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?/;
 
 export function resolveApiAssetUrl(url: string): string {
-  if (!url || /^https?:\/\//.test(url)) {
+  if (!url) {
+    return url;
+  }
+
+  if (/^https?:\/\//.test(url)) {
+    if (LOCALHOST_ORIGIN_PATTERN.test(url) && !LOCALHOST_ORIGIN_PATTERN.test(API_ASSET_BASE_URL)) {
+      return url.replace(LOCALHOST_ORIGIN_PATTERN, API_ASSET_BASE_URL);
+    }
     return url;
   }
 
