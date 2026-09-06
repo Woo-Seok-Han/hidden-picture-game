@@ -1,4 +1,4 @@
-# codeconvention.md
+# 코드 컨벤션
 
 Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
 

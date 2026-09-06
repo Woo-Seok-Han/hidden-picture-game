@@ -1,4 +1,4 @@
-# 🚀 Vercel 배포 빠른 가이드
+# Vercel 빠른 배포 가이드
 
 ## 1단계: 기본 설정 (완료됨) ✅
 
@@ -100,10 +100,10 @@ VITE_ENV=production
 
 ## 유용한 링크
 
-- 📖 [전체 배포 가이드](./VERCEL_DEPLOY_GUIDE.md)
-- ✅ [배포 체크리스트](./DEPLOYMENT_CHECKLIST.md)
-- 🔄 [라우팅 가이드](./ROUTING_GUIDE.md)
-- 🔌 [API 가이드](./API_GUIDE.md)
+- 📖 [전체 배포 가이드](./vercel-deployment-guide.md)
+- ✅ [배포 체크리스트](./deployment-checklist.md)
+- 🔄 [라우팅 가이드](./routing-guide.md)
+- 🔌 [API 가이드](./api-guide.md)
 
 ## 배포 완료! 🎉
 
