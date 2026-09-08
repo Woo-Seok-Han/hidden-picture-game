@@ -190,7 +190,8 @@
   grid-template-rows: clamp(78px, 9.77vh, 100px) minmax(0, 1fr) clamp(102px, 12.5vh, 128px);
   width: 100%;
   height: 100svh;
-  min-height: 560px;
+  height: 100dvh;
+  min-height: 0;
   overflow: hidden;
   background: #fff;
   color: #101a2d;
@@ -230,6 +231,16 @@
   stroke-width: 3.2;
 }
 
+.question-image-stage {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  container-type: size;
+  background: #0f172a;
+}
+
 .question-image-placeholder {
   position: relative;
   display: grid;
@@ -251,7 +262,7 @@
 .question-image-placeholder.has-image {
   display: block;
   padding: 0;
-  overflow: auto;
+  overflow: hidden;
   background: #0f172a;
   text-align: left;
   cursor: crosshair;
@@ -259,10 +270,9 @@
 
 .question-image-placeholder img {
   display: block;
-  width: auto;
-  height: auto;
-  max-width: none;
-  max-height: none;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 .game-message-page { display: grid; place-items: center; }
 .game-message { padding: 24px; text-align: center; }
@@ -359,7 +369,7 @@
 @media (max-width: 760px) {
   .game-page { grid-template-rows: 78px minmax(0, 1fr) 110px; }
   .game-header { grid-template-columns: auto 1fr auto; padding-inline: 16px; }
-  .game-header h1 { font-size: clamp(17px, 4vw, 25px); }
+  .game-header h1 { padding-inline: 8px; font-size: clamp(17px, 4vw, 25px); white-space: normal; text-align: center; }
   .game-progress, .game-timer { font-size: clamp(18px, 4vw, 25px); }
   .game-timer { gap: 5px; }
   .game-timer svg { width: 28px; }

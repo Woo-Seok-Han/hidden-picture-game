@@ -115,14 +115,14 @@ export default function GameScreen({ isPaused = false, onComplete }: GameScreenP
   }, [currentQuestion, isPaused, isSubmitting, secondsLeft, submitAnswer]);
 
   const handleImageClick = (event: MouseEvent<HTMLButtonElement>) => {
-    if (isSubmitting || isPaused) return;
+    if (isSubmitting || isPaused || !imageSize) return;
     const bounds = event.currentTarget.getBoundingClientRect();
-    const imageWidth = imageSize?.width ?? event.currentTarget.scrollWidth;
-    const imageHeight = imageSize?.height ?? event.currentTarget.scrollHeight;
+    if (bounds.width === 0 || bounds.height === 0) return;
     const point = {
-      x: Math.max(0, Math.min(1, (event.clientX - bounds.left + event.currentTarget.scrollLeft) / imageWidth)),
-      y: Math.max(0, Math.min(1, (event.clientY - bounds.top + event.currentTarget.scrollTop) / imageHeight)),
+      x: (event.clientX - bounds.left) / bounds.width,
+      y: (event.clientY - bounds.top) / bounds.height,
     };
+    if (point.x < 0 || point.x > 1 || point.y < 0 || point.y > 1) return;
     setSelectedPoint(point);
     submitAnswer(point);
   };
@@ -158,19 +158,33 @@ export default function GameScreen({ isPaused = false, onComplete }: GameScreenP
         </div>
       </header>
 
-      <button className="question-image-placeholder has-image" type="button" aria-label={`${currentQuestion.questionNumber}번 문제 이미지에서 잘못된 부분 선택`} disabled={isSubmitting || isPaused} onClick={handleImageClick}>
-        <img
-          src={currentQuestion.imageUrl}
-          alt={currentQuestion.imageAlt}
-          onLoad={(event) =>
-            setImageSize({
-              width: event.currentTarget.naturalWidth,
-              height: event.currentTarget.naturalHeight,
-            })
-          }
-        />
-        {selectedPoint && imageSize && <i className="selected-point" style={{ left: `${selectedPoint.x * imageSize.width}px`, top: `${selectedPoint.y * imageSize.height}px` }} aria-hidden="true" />}
-      </button>
+      <div className="question-image-stage">
+        <button
+          className="question-image-placeholder has-image"
+          type="button"
+          aria-label={`${currentQuestion.questionNumber}번 문제 이미지에서 잘못된 부분 선택`}
+          disabled={isSubmitting || isPaused || !imageSize}
+          onClick={handleImageClick}
+          style={imageSize ? {
+            width: `min(100cqw, calc(100cqh * ${imageSize.width / imageSize.height}))`,
+            aspectRatio: `${imageSize.width} / ${imageSize.height}`,
+          } : { height: "100%" }}
+        >
+          <img
+            key={currentQuestion.id}
+            src={currentQuestion.imageUrl}
+            alt={currentQuestion.imageAlt}
+            draggable={false}
+            onLoad={(event) =>
+              setImageSize({
+                width: event.currentTarget.naturalWidth,
+                height: event.currentTarget.naturalHeight,
+              })
+            }
+          />
+          {selectedPoint && <i className="selected-point" style={{ left: `${selectedPoint.x * 100}%`, top: `${selectedPoint.y * 100}%` }} aria-hidden="true" />}
+        </button>
+      </div>
 
       <footer className="game-action-bar">
         <p>오류가 없다면</p>
