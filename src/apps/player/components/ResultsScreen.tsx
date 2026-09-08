@@ -3,7 +3,17 @@ import type { ReactNode } from "react";
 import { fetchUserResults } from "../../../api/gameService";
 import type { GameResult, QuestionDetail } from "../../../api/gameService";
 import { useGameContext } from "../../../context/GameContext";
-import { StatusIcon } from "./PlayerIcons";
+import participantIcon from "../../../assets/results/participant.svg";
+import correctIcon from "../../../assets/results/correct.svg";
+import incorrectIcon from "../../../assets/results/incorrect.svg";
+import neutralIcon from "../../../assets/results/neutral.svg";
+import clockIcon from "../../../assets/results/clock.svg";
+import clipboardIcon from "../../../assets/results/clipboard.svg";
+import homeIcon from "../../../assets/results/home.svg";
+
+function ResultIcon({ src }: { src: string }) {
+  return <img className="result-icon" src={src} alt="" aria-hidden="true" />;
+}
 
 interface ResultsScreenProps {
   employeeNumber: string;
@@ -103,41 +113,41 @@ export default function ResultsScreen({
   return (
     <main className="results-page">
       <header className="results-summary">
-        <SummaryItem icon="♟" label="참여자 사번" boxed>
+        <SummaryItem icon={<ResultIcon src={participantIcon} />} label="참여자 사번" boxed>
           {result.employeeNumber}
         </SummaryItem>
-        <SummaryItem icon={<StatusIcon correct />} label="정답">
+        <SummaryItem icon={<ResultIcon src={correctIcon} />} label="정답">
           {result.correctAnswers}
         </SummaryItem>
-        <SummaryItem icon={<StatusIcon correct={false} />} label="오답">
+        <SummaryItem icon={<ResultIcon src={incorrectIcon} />} label="오답">
           {wrongAnswers}
         </SummaryItem>
-        <SummaryItem icon="−" label="정답률">
+        <SummaryItem icon={<ResultIcon src={neutralIcon} />} label="정답률">
           {accuracyPercent}%{" "}
           <small>
             ({result.correctAnswers}/{totalQuestions})
           </small>
         </SummaryItem>
-        <SummaryItem icon="◷" label="총 소요 시간">
+        <SummaryItem icon={<ResultIcon src={clockIcon} />} label="총 소요 시간">
           {result.totalTime}
         </SummaryItem>
-        <SummaryItem icon="☑" label="총 문제" boxed>
+        <SummaryItem icon={<ResultIcon src={clipboardIcon} />} label="총 문제" boxed>
           {totalQuestions}문제
         </SummaryItem>
       </header>
 
       <section className="results-content">
         <div className="results-title-row">
-          <h1>☑ 문제별 결과 및 해설</h1>
+          <h1><ResultIcon src={clipboardIcon} />문제별 결과 및 해설</h1>
           <div className="results-legend">
             <span>
-              <StatusIcon correct /> 정답
+              <ResultIcon src={correctIcon} /> 정답
             </span>
             <span>
-              <StatusIcon correct={false} /> 오답
+              <ResultIcon src={incorrectIcon} /> 오답
             </span>
             <span>
-              <i>−</i> 정답 없음(선택)
+              <ResultIcon src={neutralIcon} /> 정답 없음(선택)
             </span>
           </div>
         </div>
@@ -202,7 +212,7 @@ export default function ResultsScreen({
                 }`}
               >
                 <h3>
-                  <StatusIcon correct={item.isCorrect} />{" "}
+                  <ResultIcon src={item.isCorrect ? correctIcon : incorrectIcon} />
                   {item.isCorrect ? "정답입니다!" : "오답입니다."}
                 </h3>
                 <p>{item.explanation}</p>
@@ -211,7 +221,7 @@ export default function ResultsScreen({
           ))}
         </ol>
         <button className="home-button" type="button" onClick={onHome}>
-          ⌂ 처음으로 돌아가기
+          <ResultIcon src={homeIcon} /> 처음으로 돌아가기
         </button>
       </section>
     </main>
