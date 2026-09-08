@@ -220,6 +220,9 @@ export default function AdminQuestionPage() {
     }
 
     setMessage(editingQuestionId ? "문제를 수정했습니다." : "문제를 저장했습니다.");
+    if (editingQuestionId) {
+      setActiveTab("manage");
+    }
     resetForm();
     await loadQuestions();
   };
