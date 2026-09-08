@@ -65,8 +65,37 @@
 }
 
 .editor-card {
+  position: relative;
   min-height: 650px;
   padding: 24px;
+}
+
+.editor-card.is-dragging-image {
+  outline: 3px solid #175cd3;
+  outline-offset: -3px;
+}
+
+.editor-card.is-dragging-image::after {
+  content: "이미지 한 장을 여기에 놓으세요";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  border-radius: inherit;
+  background: rgb(239 248 255 / 90%);
+  color: #175cd3;
+  font-size: 20px;
+  font-weight: 700;
+  text-align: center;
+  pointer-events: none;
+}
+
+.image-drop-help {
+  color: #667085;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .question-form-card {

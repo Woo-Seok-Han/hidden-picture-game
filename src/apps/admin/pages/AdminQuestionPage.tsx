@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   changeAdminQuestionActive,
@@ -28,6 +28,8 @@ export default function AdminQuestionPage() {
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
   const [questionListError, setQuestionListError] = useState("");
   const [message, setMessage] = useState("");
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
+  const imageDragDepth = useRef(0);
 
   const loadQuestions = useCallback(async () => {
     setIsLoadingQuestions(true);
@@ -64,13 +66,17 @@ export default function AdminQuestionPage() {
     setEditingQuestionId(null);
   };
 
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-
-    if (!file) {
+  const selectImage = (files: FileList | null) => {
+    if (isSaving || !files?.length) {
       return;
     }
 
+    if (files.length !== 1) {
+      alert("이미지는 한 번에 한 장만 업로드해주세요.");
+      return;
+    }
+
+    const file = files[0];
     if (!file.type.startsWith("image/")) {
       alert("이미지 파일만 업로드할 수 있습니다.");
       return;
@@ -80,11 +86,43 @@ export default function AdminQuestionPage() {
       URL.revokeObjectURL(form.imageUrl);
     }
 
+    const imageUrl = URL.createObjectURL(file);
     setForm((prev) => ({
       ...prev,
       imageFile: file,
-      imageUrl: URL.createObjectURL(file),
+      imageUrl,
+      errorAreas: [],
     }));
+  };
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    selectImage(event.currentTarget.files);
+    event.currentTarget.value = "";
+  };
+
+  const handleImageDragEnter = (event: React.DragEvent<HTMLElement>) => {
+    if (!event.dataTransfer.types.includes("Files")) return;
+    event.preventDefault();
+    imageDragDepth.current += 1;
+    if (!isSaving) setIsDraggingImage(true);
+  };
+
+  const handleImageDragOver = (event: React.DragEvent<HTMLElement>) => {
+    if (!event.dataTransfer.types.includes("Files")) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = isSaving ? "none" : "copy";
+  };
+
+  const handleImageDragLeave = () => {
+    imageDragDepth.current = Math.max(0, imageDragDepth.current - 1);
+    if (imageDragDepth.current === 0) setIsDraggingImage(false);
+  };
+
+  const handleImageDrop = (event: React.DragEvent<HTMLElement>) => {
+    event.preventDefault();
+    imageDragDepth.current = 0;
+    setIsDraggingImage(false);
+    selectImage(event.dataTransfer.files);
   };
 
   const handleAddArea = (area: ErrorArea) => {
@@ -215,13 +253,19 @@ export default function AdminQuestionPage() {
 
       {activeTab === "create" ? (
       <div className="admin-layout">
-        <section className="editor-card">
+        <section
+          className={`editor-card${isDraggingImage ? " is-dragging-image" : ""}`}
+          onDragEnter={handleImageDragEnter}
+          onDragOver={handleImageDragOver}
+          onDragLeave={handleImageDragLeave}
+          onDrop={handleImageDrop}
+        >
           {!form.imageUrl ? (
             <label className="upload-area">
               <span className="upload-icon">+</span>
               <strong>문제 이미지 업로드</strong>
-              <span>JPG, PNG 등의 이미지</span>
-              <input type="file" accept="image/*" hidden onChange={handleImageChange} />
+              <span>클릭하거나 이미지 한 장을 여기에 끌어다 놓으세요 (JPG, PNG 등)</span>
+              <input type="file" accept="image/*" hidden disabled={isSaving} onChange={handleImageChange} />
             </label>
           ) : (
             <>
@@ -234,16 +278,18 @@ export default function AdminQuestionPage() {
 
                 <label className="change-image-button">
                   이미지 변경
-                  <input type="file" accept="image/*" hidden onChange={handleImageChange} />
+                  <input type="file" accept="image/*" hidden disabled={isSaving} onChange={handleImageChange} />
                 </label>
               </div>
 
               <ErrorAreaEditor
+                key={form.imageUrl}
                 imageUrl={form.imageUrl}
                 errorAreas={form.errorAreas}
                 onAddArea={handleAddArea}
                 onDeleteArea={handleDeleteArea}
               />
+              <p className="image-drop-help">새 이미지를 이 영역에 끌어다 놓으면 사진이 변경되고 기존 오류 영역은 초기화됩니다.</p>
             </>
           )}
         </section>
