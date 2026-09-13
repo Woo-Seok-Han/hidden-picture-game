@@ -11,15 +11,24 @@ interface GameScreenProps {
   onComplete: () => void;
 }
 
-export default function GameScreen({ isPaused = false, onComplete }: GameScreenProps) {
+export default function GameScreen({
+  isPaused = false,
+  onComplete,
+}: GameScreenProps) {
   const { session } = useGameContext();
   const { submitAnswers } = useGameAnswers();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(15);
-  const [selectedPoint, setSelectedPoint] = useState<{ x: number; y: number } | null>(null);
-  const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
+  const [selectedPoint, setSelectedPoint] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const [imageSize, setImageSize] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -36,7 +45,9 @@ export default function GameScreen({ isPaused = false, onComplete }: GameScreenP
       setQuestions(loadedQuestions);
       setSecondsLeft(loadedQuestions[0]?.timeLimitSeconds ?? 15);
       if (loadedQuestions.length === 0) {
-        setError("등록된 문제가 없습니다. 관리자 화면에서 문제를 등록해주세요.");
+        setError(
+          "등록된 문제가 없습니다. 관리자 화면에서 문제를 등록해주세요."
+        );
       }
     }
 
@@ -57,51 +68,64 @@ export default function GameScreen({ isPaused = false, onComplete }: GameScreenP
     return () => window.clearInterval(timerId);
   }, [currentQuestion, isPaused, isSubmitting]);
 
-  const submitAnswer = useCallback(async (point: { x: number; y: number } | null) => {
-    if (isSubmitting || isPaused) return;
-    if (!session) {
-      setError("게임 세션이 없습니다. 처음 화면에서 다시 시작해주세요.");
-      return;
-    }
-    if (!currentQuestion) {
-      return;
-    }
-
-    setIsSubmitting(true);
-    setError("");
-
-    const nextAnswers = [
-      ...answers,
-      {
-        questionId: currentQuestion.id,
-        questionNumber: currentQuestion.questionNumber,
-        selectedPoint: point ?? undefined,
-        hasError: Boolean(point),
-        timestamp: new Date().toISOString(),
-      },
-    ];
-
-    if (currentQuestionIndex === questions.length - 1) {
-      const submitted = await submitAnswers(nextAnswers);
-      if (submitted) {
-        onComplete();
+  const submitAnswer = useCallback(
+    async (point: { x: number; y: number } | null) => {
+      if (isSubmitting || isPaused) return;
+      if (!session) {
+        setError("게임 세션이 없습니다. 처음 화면에서 다시 시작해주세요.");
         return;
       }
-      setIsSubmitting(false);
-      setError("답변을 제출하지 못했습니다. 다시 시도해주세요.");
-      return;
-    }
+      if (!currentQuestion) {
+        return;
+      }
 
-    window.setTimeout(() => {
-      const nextIndex = currentQuestionIndex + 1;
-      setAnswers(nextAnswers);
-      setCurrentQuestionIndex(nextIndex);
-      setSecondsLeft(questions[nextIndex]?.timeLimitSeconds ?? 15);
-      setSelectedPoint(null);
-      setImageSize(null);
-      setIsSubmitting(false);
-    }, 250);
-  }, [answers, currentQuestion, currentQuestionIndex, isPaused, isSubmitting, onComplete, questions, session, submitAnswers]);
+      setIsSubmitting(true);
+      setError("");
+
+      const nextAnswers = [
+        ...answers,
+        {
+          questionId: currentQuestion.id,
+          questionNumber: currentQuestion.questionNumber,
+          selectedPoint: point ?? undefined,
+          hasError: Boolean(point),
+          timestamp: new Date().toISOString(),
+        },
+      ];
+
+      if (currentQuestionIndex === questions.length - 1) {
+        const submitted = await submitAnswers(nextAnswers);
+        if (submitted) {
+          onComplete();
+          return;
+        }
+        setIsSubmitting(false);
+        setError("답변을 제출하지 못했습니다. 다시 시도해주세요.");
+        return;
+      }
+
+      window.setTimeout(() => {
+        const nextIndex = currentQuestionIndex + 1;
+        setAnswers(nextAnswers);
+        setCurrentQuestionIndex(nextIndex);
+        setSecondsLeft(questions[nextIndex]?.timeLimitSeconds ?? 15);
+        setSelectedPoint(null);
+        setImageSize(null);
+        setIsSubmitting(false);
+      }, 250);
+    },
+    [
+      answers,
+      currentQuestion,
+      currentQuestionIndex,
+      isPaused,
+      isSubmitting,
+      onComplete,
+      questions,
+      session,
+      submitAnswers,
+    ]
+  );
 
   useEffect(() => {
     if (secondsLeft !== 0 || isSubmitting || isPaused || !currentQuestion) {
@@ -150,11 +174,15 @@ export default function GameScreen({ isPaused = false, onComplete }: GameScreenP
   return (
     <main className="game-page">
       <header className="game-header">
-        <p className="game-progress">문제 {currentQuestionIndex + 1} / {questions.length}</p>
-        <h1>잘못 보관된 부분을 터치하세요</h1>
+        <p className="game-progress">
+          문제 {currentQuestionIndex + 1} / {questions.length}
+        </p>
+        <h1>오류가 있는 부분을 터치하세요</h1>
         <div className="game-timer" aria-label={`남은 시간 ${secondsLeft}초`}>
           <TimerIcon />
-          <time dateTime={`PT${secondsLeft}S`}>00:{String(secondsLeft).padStart(2, "0")}</time>
+          <time dateTime={`PT${secondsLeft}S`}>
+            00:{String(secondsLeft).padStart(2, "0")}
+          </time>
         </div>
       </header>
 
@@ -165,10 +193,16 @@ export default function GameScreen({ isPaused = false, onComplete }: GameScreenP
           aria-label={`${currentQuestion.questionNumber}번 문제 이미지에서 잘못된 부분 선택`}
           disabled={isSubmitting || isPaused || !imageSize}
           onClick={handleImageClick}
-          style={imageSize ? {
-            width: `min(100cqw, calc(100cqh * ${imageSize.width / imageSize.height}))`,
-            aspectRatio: `${imageSize.width} / ${imageSize.height}`,
-          } : { height: "100%" }}
+          style={
+            imageSize
+              ? {
+                  width: `min(100cqw, calc(100cqh * ${
+                    imageSize.width / imageSize.height
+                  }))`,
+                  aspectRatio: `${imageSize.width} / ${imageSize.height}`,
+                }
+              : { height: "100%" }
+          }
         >
           <img
             key={currentQuestion.id}
@@ -182,13 +216,29 @@ export default function GameScreen({ isPaused = false, onComplete }: GameScreenP
               })
             }
           />
-          {selectedPoint && <i className="selected-point" style={{ left: `${selectedPoint.x * 100}%`, top: `${selectedPoint.y * 100}%` }} aria-hidden="true" />}
+          {selectedPoint && (
+            <i
+              className="selected-point"
+              style={{
+                left: `${selectedPoint.x * 100}%`,
+                top: `${selectedPoint.y * 100}%`,
+              }}
+              aria-hidden="true"
+            />
+          )}
         </button>
       </div>
 
       <footer className="game-action-bar">
         <p>오류가 없다면</p>
-        <button type="button" className="no-error-button" disabled={isSubmitting || isPaused} onClick={() => submitAnswer(null)}>오류 없음</button>
+        <button
+          type="button"
+          className="no-error-button"
+          disabled={isSubmitting || isPaused}
+          onClick={() => submitAnswer(null)}
+        >
+          오류 없음
+        </button>
         <p>을 눌러주세요.</p>
       </footer>
     </main>
