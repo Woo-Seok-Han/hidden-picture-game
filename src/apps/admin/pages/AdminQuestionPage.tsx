@@ -16,14 +16,16 @@ const initialForm: QuestionForm = {
   imageUrl: "",
   errorAreas: [],
   explanation: "",
-  timeLimitSeconds: 30,
+  timeLimitSeconds: 10,
 };
 
 export default function AdminQuestionPage() {
   const [form, setForm] = useState<QuestionForm>(initialForm);
   const [questions, setQuestions] = useState<AdminQuestion[]>([]);
   const [activeTab, setActiveTab] = useState<"create" | "manage">("create");
-  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(
+    null
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
   const [questionListError, setQuestionListError] = useState("");
@@ -37,7 +39,9 @@ export default function AdminQuestionPage() {
     try {
       setQuestions(await fetchAdminQuestions());
     } catch {
-      setQuestionListError("저장된 문제 목록을 불러오지 못했습니다. 백엔드 서버 상태를 확인해주세요.");
+      setQuestionListError(
+        "저장된 문제 목록을 불러오지 못했습니다. 백엔드 서버 상태를 확인해주세요."
+      );
     } finally {
       setIsLoadingQuestions(false);
     }
@@ -163,13 +167,20 @@ export default function AdminQuestionPage() {
   };
 
   const handleToggleActive = async (question: AdminQuestion) => {
-    const updatedQuestion = await changeAdminQuestionActive(question.id, !question.active);
+    const updatedQuestion = await changeAdminQuestionActive(
+      question.id,
+      !question.active
+    );
     if (!updatedQuestion) {
       setMessage("출제 여부를 변경하지 못했습니다.");
       return;
     }
 
-    setMessage(updatedQuestion.active ? "출제 문제로 변경했습니다." : "비출제 문제로 변경했습니다.");
+    setMessage(
+      updatedQuestion.active
+        ? "출제 문제로 변경했습니다."
+        : "비출제 문제로 변경했습니다."
+    );
     await loadQuestions();
   };
 
@@ -219,7 +230,9 @@ export default function AdminQuestionPage() {
       return;
     }
 
-    setMessage(editingQuestionId ? "문제를 수정했습니다." : "문제를 저장했습니다.");
+    setMessage(
+      editingQuestionId ? "문제를 수정했습니다." : "문제를 저장했습니다."
+    );
     if (editingQuestionId) {
       setActiveTab("manage");
     }
@@ -255,150 +268,191 @@ export default function AdminQuestionPage() {
       </nav>
 
       {activeTab === "create" ? (
-      <div className="admin-layout">
-        <section
-          className={`editor-card${isDraggingImage ? " is-dragging-image" : ""}`}
-          onDragEnter={handleImageDragEnter}
-          onDragOver={handleImageDragOver}
-          onDragLeave={handleImageDragLeave}
-          onDrop={handleImageDrop}
-        >
-          {!form.imageUrl ? (
-            <label className="upload-area">
-              <span className="upload-icon">+</span>
-              <strong>문제 이미지 업로드</strong>
-              <span>클릭하거나 이미지 한 장을 여기에 끌어다 놓으세요 (JPG, PNG 등)</span>
-              <input type="file" accept="image/*" hidden disabled={isSaving} onChange={handleImageChange} />
-            </label>
-          ) : (
-            <>
-              <div className="editor-toolbar">
-                <div>
-                  등록된 오류
-                  <strong>{form.errorAreas.length}</strong>
-                  개
+        <div className="admin-layout">
+          <section
+            className={`editor-card${
+              isDraggingImage ? " is-dragging-image" : ""
+            }`}
+            onDragEnter={handleImageDragEnter}
+            onDragOver={handleImageDragOver}
+            onDragLeave={handleImageDragLeave}
+            onDrop={handleImageDrop}
+          >
+            {!form.imageUrl ? (
+              <label className="upload-area">
+                <span className="upload-icon">+</span>
+                <strong>문제 이미지 업로드</strong>
+                <span>
+                  클릭하거나 이미지 한 장을 여기에 끌어다 놓으세요 (JPG, PNG 등)
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  disabled={isSaving}
+                  onChange={handleImageChange}
+                />
+              </label>
+            ) : (
+              <>
+                <div className="editor-toolbar">
+                  <div>
+                    등록된 오류
+                    <strong>{form.errorAreas.length}</strong>개
+                  </div>
+
+                  <label className="change-image-button">
+                    이미지 변경
+                    <input
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      disabled={isSaving}
+                      onChange={handleImageChange}
+                    />
+                  </label>
                 </div>
 
-                <label className="change-image-button">
-                  이미지 변경
-                  <input type="file" accept="image/*" hidden disabled={isSaving} onChange={handleImageChange} />
-                </label>
+                <ErrorAreaEditor
+                  key={form.imageUrl}
+                  imageUrl={form.imageUrl}
+                  errorAreas={form.errorAreas}
+                  onAddArea={handleAddArea}
+                  onDeleteArea={handleDeleteArea}
+                />
+                <p className="image-drop-help">
+                  새 이미지를 이 영역에 끌어다 놓으면 사진이 변경되고 기존 오류
+                  영역은 초기화됩니다.
+                </p>
+              </>
+            )}
+          </section>
+
+          <aside className="question-form-card">
+            <h2>{editingQuestionId ? "문제 수정" : "문제 설정"}</h2>
+
+            <div className="form-field">
+              <label>오류 개수</label>
+              <div className="error-count">{form.errorAreas.length} 개</div>
+              <small>드래그한 영역 개수로 자동 계산됩니다.</small>
+            </div>
+
+            <div className="form-field">
+              <label htmlFor="timeLimit">제한 시간</label>
+              <div className="input-with-unit">
+                <input
+                  id="timeLimit"
+                  type="number"
+                  min={5}
+                  max={300}
+                  value={form.timeLimitSeconds}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      timeLimitSeconds: Number(e.target.value),
+                    }))
+                  }
+                />
+                <span>초</span>
               </div>
+            </div>
 
-              <ErrorAreaEditor
-                key={form.imageUrl}
-                imageUrl={form.imageUrl}
-                errorAreas={form.errorAreas}
-                onAddArea={handleAddArea}
-                onDeleteArea={handleDeleteArea}
-              />
-              <p className="image-drop-help">새 이미지를 이 영역에 끌어다 놓으면 사진이 변경되고 기존 오류 영역은 초기화됩니다.</p>
-            </>
-          )}
-        </section>
-
-        <aside className="question-form-card">
-          <h2>{editingQuestionId ? "문제 수정" : "문제 설정"}</h2>
-
-          <div className="form-field">
-            <label>오류 개수</label>
-            <div className="error-count">{form.errorAreas.length} 개</div>
-            <small>드래그한 영역 개수로 자동 계산됩니다.</small>
-          </div>
-
-          <div className="form-field">
-            <label htmlFor="timeLimit">제한 시간</label>
-            <div className="input-with-unit">
-              <input
-                id="timeLimit"
-                type="number"
-                min={5}
-                max={300}
-                value={form.timeLimitSeconds}
+            <div className="form-field">
+              <label htmlFor="explanation">해설</label>
+              <textarea
+                id="explanation"
+                value={form.explanation}
+                placeholder="문제 종료 후 보여줄 해설을 입력해주세요."
                 onChange={(e) =>
                   setForm((prev) => ({
                     ...prev,
-                    timeLimitSeconds: Number(e.target.value),
+                    explanation: e.target.value,
                   }))
                 }
               />
-              <span>초</span>
             </div>
-          </div>
 
-          <div className="form-field">
-            <label htmlFor="explanation">해설</label>
-            <textarea
-              id="explanation"
-              value={form.explanation}
-              placeholder="문제 종료 후 보여줄 해설을 입력해주세요."
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  explanation: e.target.value,
-                }))
-              }
-            />
-          </div>
+            <div className="area-list">
+              <div className="area-list-title">등록된 오류 영역</div>
 
-          <div className="area-list">
-            <div className="area-list-title">등록된 오류 영역</div>
+              {form.errorAreas.length === 0 ? (
+                <p className="empty-area">아직 등록된 오류 영역이 없습니다.</p>
+              ) : (
+                form.errorAreas.map((area, index) => (
+                  <div key={area.id} className="area-list-item">
+                    <span>오류 {index + 1}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteArea(area.id)}
+                    >
+                      삭제
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
 
-            {form.errorAreas.length === 0 ? (
-              <p className="empty-area">아직 등록된 오류 영역이 없습니다.</p>
-            ) : (
-              form.errorAreas.map((area, index) => (
-                <div key={area.id} className="area-list-item">
-                  <span>오류 {index + 1}</span>
-                  <button type="button" onClick={() => handleDeleteArea(area.id)}>
-                    삭제
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
+            {message && <p className="admin-message">{message}</p>}
 
-          {message && <p className="admin-message">{message}</p>}
-
-          <button type="button" className="save-button" disabled={isSaving} onClick={handleSave}>
-            {isSaving ? "저장 중..." : editingQuestionId ? "문제 수정" : "문제 저장"}
-          </button>
-
-          {editingQuestionId && (
-            <button type="button" className="cancel-edit-button" onClick={resetForm}>
-              새 문제 등록
+            <button
+              type="button"
+              className="save-button"
+              disabled={isSaving}
+              onClick={handleSave}
+            >
+              {isSaving
+                ? "저장 중..."
+                : editingQuestionId
+                ? "문제 수정"
+                : "문제 저장"}
             </button>
-          )}
 
-          <div className="saved-question-list">
-            <div className="area-list-title">최근 저장된 문제</div>
-            {questionListError ? (
-              <p className="empty-area">{questionListError}</p>
-            ) : isLoadingQuestions ? (
-              <p className="empty-area">문제 목록을 불러오는 중입니다.</p>
-            ) : questions.length === 0 ? (
-              <p className="empty-area">저장된 문제가 없습니다.</p>
-            ) : (
-              questions.slice(0, 5).map((question) => (
-                <div key={question.id} className="saved-question-item">
-                  <button type="button" onClick={() => handleEdit(question)}>
-                    <img src={question.imageUrl} alt={question.imageAlt} />
-                    <span>문제 {question.questionNumber}</span>
-                  </button>
-                  <button type="button" className="delete-question-button" onClick={() => setActiveTab("manage")}>
-                    관리
-                  </button>
-                </div>
-              ))
+            {editingQuestionId && (
+              <button
+                type="button"
+                className="cancel-edit-button"
+                onClick={resetForm}
+              >
+                새 문제 등록
+              </button>
             )}
-          </div>
-        </aside>
-      </div>
+
+            <div className="saved-question-list">
+              <div className="area-list-title">최근 저장된 문제</div>
+              {questionListError ? (
+                <p className="empty-area">{questionListError}</p>
+              ) : isLoadingQuestions ? (
+                <p className="empty-area">문제 목록을 불러오는 중입니다.</p>
+              ) : questions.length === 0 ? (
+                <p className="empty-area">저장된 문제가 없습니다.</p>
+              ) : (
+                questions.slice(0, 5).map((question) => (
+                  <div key={question.id} className="saved-question-item">
+                    <button type="button" onClick={() => handleEdit(question)}>
+                      <img src={question.imageUrl} alt={question.imageAlt} />
+                      <span>문제 {question.questionNumber}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="delete-question-button"
+                      onClick={() => setActiveTab("manage")}
+                    >
+                      관리
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </aside>
+        </div>
       ) : (
         <section className="question-management">
           <div className="management-summary">
             <strong>총 {questions.length}문제</strong>
-            <span>출제 가능 {questions.filter((question) => question.active).length}문제</span>
+            <span>
+              출제 가능 {questions.filter((question) => question.active).length}
+              문제
+            </span>
           </div>
 
           {message && <p className="admin-message">{message}</p>}
@@ -412,7 +466,12 @@ export default function AdminQuestionPage() {
           ) : (
             <div className="management-list">
               {questions.map((question) => (
-                <article key={question.id} className={`management-item ${question.active ? "" : "is-inactive"}`}>
+                <article
+                  key={question.id}
+                  className={`management-item ${
+                    question.active ? "" : "is-inactive"
+                  }`}
+                >
                   <img src={question.imageUrl} alt={question.imageAlt} />
                   <div className="management-info">
                     <div>
@@ -421,17 +480,25 @@ export default function AdminQuestionPage() {
                     </div>
                     <p>{question.explanation || "해설 없음"}</p>
                     <small>
-                      제한 {question.timeLimitSeconds}초 · 오류 영역 {question.errorAreas.length}개
+                      제한 {question.timeLimitSeconds}초 · 오류 영역{" "}
+                      {question.errorAreas.length}개
                     </small>
                   </div>
                   <div className="management-actions">
-                    <button type="button" onClick={() => handleToggleActive(question)}>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleActive(question)}
+                    >
                       {question.active ? "비활성" : "활성"}
                     </button>
                     <button type="button" onClick={() => handleEdit(question)}>
                       수정
                     </button>
-                    <button type="button" className="delete-question-button" onClick={() => handleDeleteQuestion(question.id)}>
+                    <button
+                      type="button"
+                      className="delete-question-button"
+                      onClick={() => handleDeleteQuestion(question.id)}
+                    >
                       삭제
                     </button>
                   </div>
