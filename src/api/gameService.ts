@@ -19,6 +19,11 @@ export interface GameStartResponse {
   startTime: string;
 }
 
+export type EmployeeValidationResult =
+  | { ok: true; valid: true; message?: string }
+  | { ok: true; valid: false; message?: string }
+  | { ok: false; message: string };
+
 export interface Answer {
   questionId: string;
   questionNumber?: number;
@@ -131,17 +136,28 @@ async function readErrorMessage(response: Response): Promise<string> {
 }
 
 // API 호출 함수들
-export async function validateEmployee(employeeNumber: string): Promise<boolean> {
+export async function validateEmployee(employeeNumber: string): Promise<EmployeeValidationResult> {
   try {
     const response = await fetch(API_ENDPOINTS.user.validate, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ employeeNumber }),
     });
-    return response.ok;
+    const data = await response.json().catch(() => null);
+    const message = typeof data?.message === 'string' ? data.message : undefined;
+
+    if (!response.ok) {
+      return { ok: true, valid: false, message };
+    }
+
+    return {
+      ok: true,
+      valid: typeof data?.valid === 'boolean' ? data.valid : true,
+      message,
+    };
   } catch (error) {
     console.error('직원 검증 실패:', error);
-    return false;
+    return { ok: false, message: '사번 확인에 실패했습니다. 잠시 후 다시 시도해주세요.' };
   }
 }
 

@@ -4,6 +4,7 @@ import CompleteScreen from "./components/CompleteScreen";
 import EntryScreen from "./components/EntryScreen";
 import GameScreen from "./components/GameScreen";
 import ResultsScreen from "./components/ResultsScreen";
+import { validateEmployee } from "../../api/gameService";
 import { useGameContext } from "../../context/GameContext";
 import { useGameSession } from "../../hooks/useGame";
 import "./player.css";
@@ -15,6 +16,8 @@ const GAME_HISTORY_GUARD_STATE = { hiddenPictureGameRoute: "game-guard" };
 
 const NOT_ENOUGH_QUESTIONS_MESSAGE =
   "아직 준비된 문제가 부족해요. 관리자에게 문의해주세요.";
+const EMPLOYEE_NUMBER_PATTERN = /^\d{6}$/;
+const REENTRY_MESSAGE_PATTERN = /재참여|이미.*참여|참여.*완료|중복|already|duplicate/i;
 
 function getRouteState(pathname: string): { screen: PlayerScreen; employeeNumber?: string } {
   if (pathname.startsWith("/results/")) {
@@ -40,6 +43,8 @@ export default function PlayerApp() {
   const [screen, setScreen] = useState<PlayerScreen>(initialRoute.screen);
   const [employeeNumber, setEmployeeNumber] = useState(initialRoute.employeeNumber ?? "");
   const [error, setError] = useState("");
+  const [isReentryPopupOpen, setIsReentryPopupOpen] = useState(false);
+  const [isValidatingEmployee, setIsValidatingEmployee] = useState(false);
   const [isGameExitPromptOpen, setIsGameExitPromptOpen] = useState(false);
   const { clearSession } = useGameContext();
   const { startGame, isLoading } = useGameSession();
@@ -136,24 +141,41 @@ export default function PlayerApp() {
   }, [applyRoute, restoreGameRoute]);
 
   const handleEmployeeNumberChange = (value: string) => {
-    setEmployeeNumber(value);
+    setEmployeeNumber(value.replace(/\D/g, "").slice(0, 6));
     if (error) setError("");
+    if (isReentryPopupOpen) setIsReentryPopupOpen(false);
   };
 
   const handleStart = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const normalizedEmployeeNumber = employeeNumber.trim();
 
-    if (!normalizedEmployeeNumber) {
-      setError("탐정 사번을 입력해 주세요.");
+    if (!EMPLOYEE_NUMBER_PATTERN.test(normalizedEmployeeNumber)) {
+      setError("사번은 숫자 6자리로 입력해 주세요.");
       return;
     }
 
     setEmployeeNumber(normalizedEmployeeNumber);
     setError("");
 
+    setIsValidatingEmployee(true);
+    const validationResult = await validateEmployee(normalizedEmployeeNumber);
+    setIsValidatingEmployee(false);
+    if (!validationResult.ok) {
+      setError(validationResult.message);
+      return;
+    }
+    if (!validationResult.valid) {
+      setIsReentryPopupOpen(true);
+      return;
+    }
+
     const startResult = await startGame(normalizedEmployeeNumber);
     if (!startResult.ok) {
+      if (REENTRY_MESSAGE_PATTERN.test(startResult.message)) {
+        setIsReentryPopupOpen(true);
+        return;
+      }
       setError(
         startResult.message.includes("5개")
           ? NOT_ENOUGH_QUESTIONS_MESSAGE
@@ -182,6 +204,7 @@ export default function PlayerApp() {
     clearSession();
     setEmployeeNumber("");
     setError("");
+    setIsReentryPopupOpen(false);
     navigateTo("/");
   };
 
@@ -196,6 +219,10 @@ export default function PlayerApp() {
     clearSession();
     setError("");
     replaceTo("/");
+  };
+
+  const handleCloseReentryPopup = () => {
+    setIsReentryPopupOpen(false);
   };
 
   if (screen === "game") {
@@ -227,12 +254,22 @@ export default function PlayerApp() {
   }
 
   return (
-    <EntryScreen
-      employeeNumber={employeeNumber}
-      error={error}
-      isSubmitting={isLoading}
-      onEmployeeNumberChange={handleEmployeeNumberChange}
-      onSubmit={handleStart}
-    />
+    <>
+      <EntryScreen
+        employeeNumber={employeeNumber}
+        error={error}
+        isSubmitting={isLoading || isValidatingEmployee}
+        onEmployeeNumberChange={handleEmployeeNumberChange}
+        onSubmit={handleStart}
+      />
+      {isReentryPopupOpen && (
+        <div className="entry-reentry-backdrop" role="presentation">
+          <section className="entry-reentry-dialog" role="dialog" aria-modal="true" aria-labelledby="entry-reentry-title">
+            <h2 id="entry-reentry-title">재참여 입니다</h2>
+            <button type="button" onClick={handleCloseReentryPopup}>확인</button>
+          </section>
+        </div>
+      )}
+    </>
   );
 }
