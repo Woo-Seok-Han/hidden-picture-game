@@ -44,6 +44,7 @@ export default function PlayerApp() {
   const [employeeNumber, setEmployeeNumber] = useState(initialRoute.employeeNumber ?? "");
   const [error, setError] = useState("");
   const [isReentryPopupOpen, setIsReentryPopupOpen] = useState(false);
+  const [reentryEmployeeNumber, setReentryEmployeeNumber] = useState("");
   const [isValidatingEmployee, setIsValidatingEmployee] = useState(false);
   const [isGameExitPromptOpen, setIsGameExitPromptOpen] = useState(false);
   const { clearSession } = useGameContext();
@@ -143,7 +144,38 @@ export default function PlayerApp() {
   const handleEmployeeNumberChange = (value: string) => {
     setEmployeeNumber(value.replace(/\D/g, "").slice(0, 6));
     if (error) setError("");
-    if (isReentryPopupOpen) setIsReentryPopupOpen(false);
+    if (isReentryPopupOpen) {
+      setIsReentryPopupOpen(false);
+      setReentryEmployeeNumber("");
+    }
+  };
+
+  const startConfirmedGame = useCallback(
+    async (normalizedEmployeeNumber: string) => {
+      const startResult = await startGame(normalizedEmployeeNumber);
+      if (!startResult.ok) {
+        if (REENTRY_MESSAGE_PATTERN.test(startResult.message)) {
+          setReentryEmployeeNumber(normalizedEmployeeNumber);
+          setIsReentryPopupOpen(true);
+          return;
+        }
+        setError(
+          startResult.message.includes("5개")
+            ? NOT_ENOUGH_QUESTIONS_MESSAGE
+            : startResult.message,
+        );
+        return;
+      }
+
+      isGameInProgressRef.current = true;
+      navigateToGame();
+    },
+    [navigateToGame, startGame],
+  );
+
+  const openReentryPopup = (normalizedEmployeeNumber: string) => {
+    setReentryEmployeeNumber(normalizedEmployeeNumber);
+    setIsReentryPopupOpen(true);
   };
 
   const handleStart = async (event: FormEvent<HTMLFormElement>) => {
@@ -166,26 +198,11 @@ export default function PlayerApp() {
       return;
     }
     if (!validationResult.valid) {
-      setIsReentryPopupOpen(true);
+      openReentryPopup(normalizedEmployeeNumber);
       return;
     }
 
-    const startResult = await startGame(normalizedEmployeeNumber);
-    if (!startResult.ok) {
-      if (REENTRY_MESSAGE_PATTERN.test(startResult.message)) {
-        setIsReentryPopupOpen(true);
-        return;
-      }
-      setError(
-        startResult.message.includes("5개")
-          ? NOT_ENOUGH_QUESTIONS_MESSAGE
-          : startResult.message,
-      );
-      return;
-    }
-
-    isGameInProgressRef.current = true;
-    navigateToGame();
+    await startConfirmedGame(normalizedEmployeeNumber);
   };
 
   const handleGameComplete = () => {
@@ -205,6 +222,7 @@ export default function PlayerApp() {
     setEmployeeNumber("");
     setError("");
     setIsReentryPopupOpen(false);
+    setReentryEmployeeNumber("");
     navigateTo("/");
   };
 
@@ -221,8 +239,12 @@ export default function PlayerApp() {
     replaceTo("/");
   };
 
-  const handleCloseReentryPopup = () => {
+  const handleConfirmReentryPopup = async () => {
     setIsReentryPopupOpen(false);
+    if (!reentryEmployeeNumber) {
+      return;
+    }
+    await startConfirmedGame(reentryEmployeeNumber);
   };
 
   if (screen === "game") {
@@ -266,7 +288,9 @@ export default function PlayerApp() {
         <div className="entry-reentry-backdrop" role="presentation">
           <section className="entry-reentry-dialog" role="dialog" aria-modal="true" aria-labelledby="entry-reentry-title">
             <h2 id="entry-reentry-title">재참여 입니다</h2>
-            <button type="button" onClick={handleCloseReentryPopup}>확인</button>
+            <button type="button" disabled={isLoading} onClick={handleConfirmReentryPopup}>
+              {isLoading ? "준비 중..." : "확인"}
+            </button>
           </section>
         </div>
       )}
