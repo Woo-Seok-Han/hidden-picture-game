@@ -474,6 +474,34 @@
   pointer-events: none;
 }
 
+.answer-feedback {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: clamp(118px, 13vw, 188px);
+  height: clamp(118px, 13vw, 188px);
+  border: clamp(8px, 0.9vw, 13px) solid currentColor;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 86%);
+  box-shadow: 0 18px 44px rgb(0 0 0 / 28%);
+  font-size: clamp(70px, 8vw, 124px);
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.answer-feedback.is-correct {
+  color: #1da347;
+}
+
+.answer-feedback.is-wrong {
+  color: #df2626;
+}
+
 .game-action-bar {
   position: relative;
   z-index: 2;

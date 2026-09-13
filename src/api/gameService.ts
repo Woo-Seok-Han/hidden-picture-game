@@ -7,6 +7,7 @@ export interface Question {
   imageUrl: string;
   imageAlt: string;
   timeLimitSeconds?: number;
+  errorAreas?: ErrorArea[];
 }
 
 export interface GameStartRequest {

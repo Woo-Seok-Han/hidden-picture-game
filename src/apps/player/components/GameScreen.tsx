@@ -6,9 +6,70 @@ import { useGameContext } from "../../../context/GameContext";
 import { useGameAnswers } from "../../../hooks/useGame";
 import { TimerIcon } from "./PlayerIcons";
 
+const ANSWER_FEEDBACK_DURATION_MS = 1500;
+
 interface GameScreenProps {
   isPaused?: boolean;
   onComplete: () => void;
+}
+
+type AnswerFeedback = {
+  correct: boolean;
+};
+
+function isPointInErrorArea(point: { x: number; y: number }, question: Question) {
+  return question.errorAreas?.some((area) => (
+    point.x >= area.x
+    && point.x <= area.x + area.width
+    && point.y >= area.y
+    && point.y <= area.y + area.height
+  )) ?? false;
+}
+
+function isAnswerCorrect(question: Question, point: { x: number; y: number } | null) {
+  const hasError = Boolean(question.errorAreas?.length);
+  if (!hasError) {
+    return point === null;
+  }
+  return point !== null && isPointInErrorArea(point, question);
+}
+
+function playAnswerFeedbackSound(correct: boolean) {
+  try {
+    const AudioContextConstructor = window.AudioContext
+      ?? (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+
+    if (!AudioContextConstructor) {
+      return;
+    }
+
+    const audioContext = new AudioContextConstructor();
+    const now = audioContext.currentTime;
+    const gain = audioContext.createGain();
+    gain.connect(audioContext.destination);
+    gain.gain.setValueAtTime(0.001, now);
+    gain.gain.exponentialRampToValueAtTime(correct ? 0.08 : 0.07, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
+
+    const tones = correct
+      ? [{ frequency: 660, delay: 0 }, { frequency: 880, delay: 0.11 }]
+      : [{ frequency: 220, delay: 0 }, { frequency: 150, delay: 0.11 }];
+
+    tones.forEach(({ frequency, delay }) => {
+      const oscillator = audioContext.createOscillator();
+      oscillator.type = correct ? "sine" : "triangle";
+      oscillator.frequency.setValueAtTime(frequency, now + delay);
+      oscillator.connect(gain);
+      oscillator.start(now + delay);
+      oscillator.stop(now + delay + 0.16);
+    });
+
+    window.setTimeout(() => {
+      void audioContext.close();
+    }, 450);
+  } catch {
+    // Some browsers block audio creation until user interaction. Feedback UI still works.
+  }
 }
 
 export default function GameScreen({
@@ -29,6 +90,7 @@ export default function GameScreen({
     width: number;
     height: number;
   } | null>(null);
+  const [answerFeedback, setAnswerFeedback] = useState<AnswerFeedback | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -81,6 +143,9 @@ export default function GameScreen({
 
       setIsSubmitting(true);
       setError("");
+      const correct = isAnswerCorrect(currentQuestion, point);
+      setAnswerFeedback({ correct });
+      playAnswerFeedbackSound(correct);
 
       const nextAnswers = [
         ...answers,
@@ -94,13 +159,16 @@ export default function GameScreen({
       ];
 
       if (currentQuestionIndex === questions.length - 1) {
-        const submitted = await submitAnswers(nextAnswers);
-        if (submitted) {
-          onComplete();
-          return;
-        }
-        setIsSubmitting(false);
-        setError("답변을 제출하지 못했습니다. 다시 시도해주세요.");
+        window.setTimeout(async () => {
+          const submitted = await submitAnswers(nextAnswers);
+          if (submitted) {
+            onComplete();
+            return;
+          }
+          setAnswerFeedback(null);
+          setIsSubmitting(false);
+          setError("답변을 제출하지 못했습니다. 다시 시도해주세요.");
+        }, ANSWER_FEEDBACK_DURATION_MS);
         return;
       }
 
@@ -111,8 +179,9 @@ export default function GameScreen({
         setSecondsLeft(questions[nextIndex]?.timeLimitSeconds ?? 15);
         setSelectedPoint(null);
         setImageSize(null);
+        setAnswerFeedback(null);
         setIsSubmitting(false);
-      }, 250);
+      }, ANSWER_FEEDBACK_DURATION_MS);
     },
     [
       answers,
@@ -225,6 +294,15 @@ export default function GameScreen({
               }}
               aria-hidden="true"
             />
+          )}
+          {answerFeedback && (
+            <output
+              className={`answer-feedback ${answerFeedback.correct ? "is-correct" : "is-wrong"}`}
+              aria-live="assertive"
+              aria-label={answerFeedback.correct ? "정답입니다" : "오답입니다"}
+            >
+              {answerFeedback.correct ? "O" : "X"}
+            </output>
           )}
         </button>
       </div>
