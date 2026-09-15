@@ -181,7 +181,20 @@ export async function startGame(employeeNumber: string): Promise<GameStartRespon
   }
 }
 
-export async function fetchQuestions(): Promise<Question[]> {
+let pendingQuestionsRequest: Promise<Question[]> | null = null;
+
+export function fetchQuestions(): Promise<Question[]> {
+  // Share concurrent loads, including StrictMode's repeated mount effect.
+  // Clear after completion so a later game can load fresh questions.
+  if (!pendingQuestionsRequest) {
+    pendingQuestionsRequest = loadQuestions().finally(() => {
+      pendingQuestionsRequest = null;
+    });
+  }
+  return pendingQuestionsRequest;
+}
+
+async function loadQuestions(): Promise<Question[]> {
   try {
     const response = await fetch(API_ENDPOINTS.game.questions);
 
@@ -237,7 +250,19 @@ export async function completeGame(sessionId: string): Promise<GameResult | null
   }
 }
 
-export async function fetchUserResults(employeeNumber: string): Promise<GameResult | null> {
+const pendingUserResults = new Map<string, Promise<GameResult | null>>();
+
+export function fetchUserResults(employeeNumber: string): Promise<GameResult | null> {
+  const pending = pendingUserResults.get(employeeNumber);
+  if (pending) return pending;
+  const request = loadUserResults(employeeNumber).finally(() => {
+    pendingUserResults.delete(employeeNumber);
+  });
+  pendingUserResults.set(employeeNumber, request);
+  return request;
+}
+
+async function loadUserResults(employeeNumber: string): Promise<GameResult | null> {
   try {
     const response = await fetch(API_ENDPOINTS.user.results(employeeNumber));
 
