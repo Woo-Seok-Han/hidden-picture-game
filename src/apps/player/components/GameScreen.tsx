@@ -6,7 +6,7 @@ import { useGameContext } from "../../../context/GameContext";
 import { useGameAnswers } from "../../../hooks/useGame";
 import { TimerIcon } from "./PlayerIcons";
 
-const ANSWER_FEEDBACK_DURATION_MS = 1500;
+const ANSWER_FEEDBACK_DURATION_MS = 1000;
 
 interface GameScreenProps {
   isPaused?: boolean;
