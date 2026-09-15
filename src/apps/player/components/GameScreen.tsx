@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 import { fetchQuestions } from "../../../api/gameService";
 import type { Answer, Question } from "../../../api/gameService";
@@ -6,6 +6,8 @@ import { useGameContext } from "../../../context/GameContext";
 import { useGameAnswers } from "../../../hooks/useGame";
 import { TimerIcon } from "./PlayerIcons";
 import LoadingModal from "./LoadingModal";
+import correctSoundUrl from "../../../assets/audio/correct.mp3";
+import errorSoundUrl from "../../../assets/audio/error.mp3";
 
 const ANSWER_FEEDBACK_DURATION_MS = 1000;
 
@@ -35,50 +37,42 @@ function isAnswerCorrect(question: Question, point: { x: number; y: number } | n
   return point !== null && isPointInErrorArea(point, question);
 }
 
-function playAnswerFeedbackSound(correct: boolean) {
-  try {
-    const AudioContextConstructor = window.AudioContext
-      ?? (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-
-    if (!AudioContextConstructor) {
-      return;
-    }
-
-    const audioContext = new AudioContextConstructor();
-    const now = audioContext.currentTime;
-    const gain = audioContext.createGain();
-    gain.connect(audioContext.destination);
-    gain.gain.setValueAtTime(0.001, now);
-    gain.gain.exponentialRampToValueAtTime(correct ? 0.08 : 0.07, now + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
-
-    const tones = correct
-      ? [{ frequency: 660, delay: 0 }, { frequency: 880, delay: 0.11 }]
-      : [{ frequency: 220, delay: 0 }, { frequency: 150, delay: 0.11 }];
-
-    tones.forEach(({ frequency, delay }) => {
-      const oscillator = audioContext.createOscillator();
-      oscillator.type = correct ? "sine" : "triangle";
-      oscillator.frequency.setValueAtTime(frequency, now + delay);
-      oscillator.connect(gain);
-      oscillator.start(now + delay);
-      oscillator.stop(now + delay + 0.16);
-    });
-
-    window.setTimeout(() => {
-      void audioContext.close();
-    }, 450);
-  } catch {
-    // Some browsers block audio creation until user interaction. Feedback UI still works.
-  }
-}
-
 export default function GameScreen({
   isPaused = false,
   onComplete,
 }: GameScreenProps) {
   const { session } = useGameContext();
   const { submitAnswers } = useGameAnswers();
+  const feedbackAudio = useRef<{ correct: HTMLAudioElement; error: HTMLAudioElement } | null>(null);
+
+  useEffect(() => {
+    const sounds = { correct: new Audio(correctSoundUrl), error: new Audio(errorSoundUrl) };
+    feedbackAudio.current = sounds;
+    Object.values(sounds).forEach((sound) => {
+      sound.preload = "auto";
+      sound.load();
+    });
+    return () => {
+      feedbackAudio.current = null;
+      Object.values(sounds).forEach((sound) => {
+        sound.pause();
+        sound.removeAttribute("src");
+        sound.load();
+      });
+    };
+  }, []);
+
+  const playAnswerFeedbackSound = useCallback((correct: boolean) => {
+    const sounds = feedbackAudio.current;
+    if (!sounds) return;
+    Object.values(sounds).forEach((sound) => {
+      sound.pause();
+      sound.currentTime = 0;
+    });
+    void sounds[correct ? "correct" : "error"].play().catch(() => {
+      // Playback restrictions or media errors must not interrupt the game.
+    });
+  }, []);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -217,6 +211,7 @@ export default function GameScreen({
       isSubmitting,
       imageSize,
       onComplete,
+      playAnswerFeedbackSound,
       questions,
       session,
       submitAnswers,
