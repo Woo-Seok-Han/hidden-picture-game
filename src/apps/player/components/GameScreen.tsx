@@ -120,7 +120,7 @@ export default function GameScreen({
   }, []);
 
   useEffect(() => {
-    if (!currentQuestion || isSubmitting || isPaused) {
+    if (!currentQuestion || !imageSize || isSubmitting || isPaused) {
       return;
     }
 
@@ -128,11 +128,33 @@ export default function GameScreen({
       setSecondsLeft((seconds) => (seconds > 0 ? seconds - 1 : 0));
     }, 1000);
     return () => window.clearInterval(timerId);
-  }, [currentQuestion, isPaused, isSubmitting]);
+  }, [currentQuestion, imageSize, isPaused, isSubmitting]);
+
+  useEffect(() => {
+    if (!imageSize) return;
+    let cancelled = false;
+    // Finish the visible image first, then warm the remaining URLs in order.
+    async function preloadRemaining() {
+      for (const question of questions.slice(currentQuestionIndex + 1)) {
+        if (cancelled) return;
+        const image = new Image();
+        image.fetchPriority = "low";
+        image.src = question.imageUrl;
+        try {
+          await image.decode();
+        } catch {
+          // A speculative failure must not interrupt the active question.
+          // The visible image will retry the URL when this question opens.
+        }
+      }
+    }
+    void preloadRemaining();
+    return () => { cancelled = true; };
+  }, [currentQuestionIndex, imageSize, questions]);
 
   const submitAnswer = useCallback(
     async (point: { x: number; y: number } | null) => {
-      if (isSubmitting || isPaused) return;
+      if (isSubmitting || isPaused || !imageSize) return;
       if (!session) {
         setError("게임 세션이 없습니다. 처음 화면에서 다시 시작해주세요.");
         return;
@@ -189,6 +211,7 @@ export default function GameScreen({
       currentQuestionIndex,
       isPaused,
       isSubmitting,
+      imageSize,
       onComplete,
       questions,
       session,
@@ -197,7 +220,7 @@ export default function GameScreen({
   );
 
   useEffect(() => {
-    if (secondsLeft !== 0 || isSubmitting || isPaused || !currentQuestion) {
+    if (secondsLeft !== 0 || isSubmitting || isPaused || !currentQuestion || !imageSize) {
       return;
     }
 
@@ -205,7 +228,7 @@ export default function GameScreen({
       submitAnswer(null);
     }, 0);
     return () => window.clearTimeout(timeoutId);
-  }, [currentQuestion, isPaused, isSubmitting, secondsLeft, submitAnswer]);
+  }, [currentQuestion, imageSize, isPaused, isSubmitting, secondsLeft, submitAnswer]);
 
   const handleImageClick = (event: MouseEvent<HTMLButtonElement>) => {
     if (isSubmitting || isPaused || !imageSize) return;
@@ -256,6 +279,7 @@ export default function GameScreen({
       </header>
 
       <div className="question-image-stage">
+        {!imageSize && <p role="status">이미지를 불러오는 중입니다.</p>}
         <button
           className="question-image-placeholder has-image"
           type="button"
@@ -278,12 +302,19 @@ export default function GameScreen({
             src={currentQuestion.imageUrl}
             alt={currentQuestion.imageAlt}
             draggable={false}
-            onLoad={(event) =>
-              setImageSize({
-                width: event.currentTarget.naturalWidth,
-                height: event.currentTarget.naturalHeight,
-              })
-            }
+            fetchPriority="high"
+            decoding="async"
+            onLoad={async (event) => {
+              const image = event.currentTarget;
+              try {
+                await image.decode();
+                if (!image.isConnected) return;
+                setImageSize({ width: image.naturalWidth, height: image.naturalHeight });
+              } catch {
+                if (image.isConnected) setError("이미지를 표시하지 못했습니다. 게임을 다시 시작해주세요.");
+              }
+            }}
+            onError={() => setError("이미지를 불러오지 못했습니다. 연결 상태를 확인하고 게임을 다시 시작해주세요.")}
           />
           {selectedPoint && (
             <i
@@ -312,7 +343,7 @@ export default function GameScreen({
         <button
           type="button"
           className="no-error-button"
-          disabled={isSubmitting || isPaused}
+          disabled={isSubmitting || isPaused || !imageSize}
           onClick={() => submitAnswer(null)}
         >
           오류 없음

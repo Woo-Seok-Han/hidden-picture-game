@@ -13,6 +13,7 @@ const chromePath = process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Ap
 const vite = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', '5178', '--strictPort'], { windowsHide: true, stdio: 'ignore' });
 const chrome = spawn(chromePath, ['--headless=new', '--remote-debugging-port=9238', `--user-data-dir=${profile}`, '--no-first-run', '--no-default-browser-check', 'about:blank'], { windowsHide: true, stdio: 'ignore' });
 let socket;
+let imageRequests = [];
 try {
   async function waitFor(check) {
     for (let attempt = 0; attempt < 100; attempt++) {
@@ -46,6 +47,8 @@ try {
       else request.resolve(message.result);
     } else if (message.method === 'Fetch.requestPaused') {
       const url = new URL(message.params.request.url);
+      imageRequests.push(url.href);
+      if (!url.searchParams.has('next')) await delay(1600);
       const [width, height] = url.searchParams.get('size').split('x');
       const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="#cbd5e1"/><rect x="60%" y="20%" width="20%" height="30%" fill="#ef4444"/></svg>`;
       await send('Fetch.fulfillRequest', { requestId: message.params.requestId, responseCode: 200, responseHeaders: [{ name: 'Content-Type', value: 'image/svg+xml' }], body: Buffer.from(svg).toString('base64') });
@@ -66,7 +69,7 @@ try {
       const question = { id: 'q1', questionNumber: 1, imageUrl: '${origin}/test-image?size=' + size, imageAlt: 'test', timeLimitSeconds: 120 };
       let data;
       if (String(url).endsWith('/start')) data = { sessionId: 'test', employeeNumber: 'test', startTime: new Date().toISOString() };
-      else if (String(url).endsWith('/questions')) data = [question, { ...question, id: 'q2', questionNumber: 2 }];
+      else if (String(url).endsWith('/questions')) data = [question, { ...question, id: 'q2', questionNumber: 2, imageUrl: question.imageUrl + '&next=1' }];
       else if (String(url).endsWith('/submit')) {
         window.submission = JSON.parse(options.body);
         data = { sessionId: 'test', employeeNumber: 'test', correctAnswers: 1, totalQuestions: 2, accuracy: 0.5, totalTime: '00:01' };
@@ -82,6 +85,7 @@ try {
     [320, 568, 160, 90],
   ];
   for (const [width, height, imageWidth, imageHeight] of scenarios) {
+    imageRequests = [];
     await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
     await send('Page.navigate', { url: origin + '?size=' + imageWidth + 'x' + imageHeight });
     await waitFor(() => evaluate('Boolean(document.querySelector("#employee-number"))'));
@@ -91,7 +95,14 @@ try {
       input.dispatchEvent(new Event('input', { bubbles: true }));
     `);
     await evaluate('document.querySelector(".entry-card button").click()');
+    await waitFor(() => evaluate('Boolean(document.querySelector(".game-timer time"))'));
+    await delay(1100);
+    assert.equal(await evaluate('document.querySelector(".game-timer time").textContent'), '00:120', 'Timer stays frozen while image is loading');
+    assert.equal(await evaluate('document.querySelector(".no-error-button").disabled'), true, 'Answer is disabled during loading');
     await waitFor(() => evaluate('Boolean(document.querySelector(".has-image:not(:disabled)"))'));
+    await waitFor(() => imageRequests.some(url => url.includes('next=1')));
+    await delay(1100);
+    assert.equal(await evaluate('document.querySelector(".game-timer time").textContent'), '00:119', 'Timer starts after image becomes ready');
     const readLayout = () => evaluate(`(() => {
       const rect = selector => { const r = document.querySelector(selector).getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height }; };
       return { button: rect('.has-image'), image: rect('.has-image img'), stage: rect('.question-image-stage'), footer: rect('.game-action-bar'), scrollWidth: document.documentElement.scrollWidth, scrollHeight: document.documentElement.scrollHeight };
@@ -125,7 +136,7 @@ try {
     const marker = await evaluate(`(() => { const r = document.querySelector('.selected-point')?.getBoundingClientRect(); return r ? { x: r.x + r.width / 2, y: r.y + r.height / 2 } : null; })()`);
     assert.ok(marker && Math.abs(marker.x - x) < 1 && Math.abs(marker.y - y) < 1, 'Marker follows tap');
     await waitFor(() => evaluate('document.querySelector(".game-progress")?.textContent.includes("2 / 2") && !document.querySelector(".has-image").disabled'));
-    // Same image URL on the next question must still become clickable.
+    // A prefetched next image must become clickable.
     await evaluate('document.querySelector(".no-error-button").click()');
     await waitFor(() => evaluate('Boolean(window.submission)'));
     const { answers } = await evaluate('window.submission');
