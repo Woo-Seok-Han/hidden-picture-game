@@ -5,6 +5,7 @@ import type { Answer, Question } from "../../../api/gameService";
 import { useGameContext } from "../../../context/GameContext";
 import { useGameAnswers } from "../../../hooks/useGame";
 import { TimerIcon } from "./PlayerIcons";
+import LoadingModal from "./LoadingModal";
 
 const ANSWER_FEEDBACK_DURATION_MS = 1000;
 
@@ -92,6 +93,7 @@ export default function GameScreen({
   } | null>(null);
   const [answerFeedback, setAnswerFeedback] = useState<AnswerFeedback | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSavingResult, setIsSavingResult] = useState(false);
   const [error, setError] = useState("");
 
   const currentQuestion = questions[currentQuestionIndex];
@@ -182,12 +184,14 @@ export default function GameScreen({
 
       if (currentQuestionIndex === questions.length - 1) {
         window.setTimeout(async () => {
+          setAnswerFeedback(null);
+          setIsSavingResult(true);
           const submitted = await submitAnswers(nextAnswers);
           if (submitted) {
             onComplete();
             return;
           }
-          setAnswerFeedback(null);
+          setIsSavingResult(false);
           setIsSubmitting(false);
           setError("답변을 제출하지 못했습니다. 다시 시도해주세요.");
         }, ANSWER_FEEDBACK_DURATION_MS);
@@ -253,34 +257,25 @@ export default function GameScreen({
     );
   }
 
-  if (!currentQuestion) {
-    return (
-      <main className="game-page game-message-page">
-        <section className="game-message">
-          <h1>문제를 불러오는 중입니다.</h1>
-        </section>
-      </main>
-    );
-  }
+  const isPreparingQuestion = !currentQuestion || !imageSize;
 
   return (
     <main className="game-page">
       <header className="game-header">
         <p className="game-progress">
-          문제 {currentQuestionIndex + 1} / {questions.length}
+          문제 {currentQuestion ? `${currentQuestionIndex + 1} / ${questions.length}` : "— / —"}
         </p>
         <h1>오류가 있는 부분을 터치하세요</h1>
         <div className="game-timer" aria-label={`남은 시간 ${secondsLeft}초`}>
           <TimerIcon />
           <time dateTime={`PT${secondsLeft}S`}>
-            00:{String(secondsLeft).padStart(2, "0")}
+            {currentQuestion ? `00:${String(secondsLeft).padStart(2, "0")}` : "00:--"}
           </time>
         </div>
       </header>
 
       <div className="question-image-stage">
-        {!imageSize && <p role="status">이미지를 불러오는 중입니다.</p>}
-        <button
+        {currentQuestion && <button
           className="question-image-placeholder has-image"
           type="button"
           aria-label={`${currentQuestion.questionNumber}번 문제 이미지에서 잘못된 부분 선택`}
@@ -335,7 +330,7 @@ export default function GameScreen({
               {answerFeedback.correct ? "O" : "X"}
             </output>
           )}
-        </button>
+        </button>}
       </div>
 
       <footer className="game-action-bar">
@@ -350,6 +345,14 @@ export default function GameScreen({
         </button>
         <p>을 눌러주세요.</p>
       </footer>
+      {(isPreparingQuestion || isSavingResult) && !isPaused && (
+        <LoadingModal
+          title={isSavingResult ? "결과를 저장하고 있어요" : "게임을 준비하고 있어요"}
+          description={isSavingResult
+              ? "답변을 제출하고 결과를 확인하는 중입니다."
+              : currentQuestion ? "이미지를 불러오는 중입니다." : "문제를 불러오는 중입니다."}
+        />
+      )}
     </main>
   );
 }

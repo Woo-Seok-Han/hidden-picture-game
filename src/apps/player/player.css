@@ -462,6 +462,65 @@
   margin: 0;
   font-size: clamp(22px, 3vw, 36px);
 }
+.game-loading-dialog {
+  width: min(calc(100% - 40px), 420px);
+  margin: auto;
+  padding: 36px 28px;
+  border: 0;
+  border-radius: 24px;
+  background: #fff;
+  color: #0c2858;
+  text-align: center;
+  box-shadow: 0 20px 64px rgb(12 40 88 / 20%);
+}
+
+.game-loading-dialog::backdrop {
+  background: rgb(16 26 45 / 38%);
+}
+
+.game-loading-dialog h2 {
+  margin: 0;
+  font-size: clamp(21px, 3vw, 28px);
+  word-break: keep-all;
+}
+
+.game-loading-dialog p {
+  margin: 16px 0 28px;
+  color: #52647d;
+  font-size: clamp(14px, 2vw, 17px);
+  line-height: 1.6;
+  word-break: keep-all;
+}
+
+.game-loading-bar {
+  width: min(100%, 320px);
+  height: 8px;
+  margin-inline: auto;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #dce7f8;
+}
+
+.game-loading-bar span {
+  display: block;
+  width: 40%;
+  height: 100%;
+  border-radius: inherit;
+  background: #075ee8;
+  animation: game-loading-slide 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes game-loading-slide {
+  from { transform: translateX(0); }
+  to { transform: translateX(150%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-loading-bar span {
+    animation-duration: 2.8s;
+  }
+}
+
 .selected-point {
   position: absolute;
   width: 42px;

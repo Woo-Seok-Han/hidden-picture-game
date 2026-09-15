@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { fetchUserResults } from "../../../api/gameService";
 import type { GameResult, QuestionDetail } from "../../../api/gameService";
 import { useGameContext } from "../../../context/GameContext";
+import LoadingModal from "./LoadingModal";
 import participantIcon from "../../../assets/results/participant.svg";
 import correctIcon from "../../../assets/results/correct.svg";
 import incorrectIcon from "../../../assets/results/incorrect.svg";
@@ -65,6 +66,7 @@ export default function ResultsScreen({
     let ignore = false;
     async function loadResult() {
       setIsLoading(true);
+      setError("");
       const loadedResult = await fetchUserResults(employeeNumber);
       if (ignore) {
         return;
@@ -82,17 +84,7 @@ export default function ResultsScreen({
     };
   }, [employeeNumber, gameResult]);
 
-  if (isLoading) {
-    return (
-      <main className="results-page results-state-page">
-        <section className="results-state">
-          <h1>채점 결과를 불러오는 중입니다.</h1>
-        </section>
-      </main>
-    );
-  }
-
-  if (error || !result) {
+  if (!isLoading && (error || !result)) {
     return (
       <main className="results-page results-state-page">
         <section className="results-state">
@@ -105,34 +97,34 @@ export default function ResultsScreen({
     );
   }
 
-  const totalQuestions = result.totalQuestions || result.details?.length || 0;
-  const wrongAnswers = Math.max(0, totalQuestions - result.correctAnswers);
-  const accuracyPercent = Math.round(result.accuracy * 100);
-  const details = result.details ?? [];
+  const totalQuestions = result?.totalQuestions || result?.details?.length || 0;
+  const wrongAnswers = Math.max(0, totalQuestions - (result?.correctAnswers ?? 0));
+  const accuracyPercent = Math.round((result?.accuracy ?? 0) * 100);
+  const details = isLoading ? [] : result?.details ?? [];
 
   return (
     <main className="results-page">
       <header className="results-summary">
         <SummaryItem icon={<ResultIcon src={participantIcon} />} label="참여자 사번" boxed>
-          {result.employeeNumber}
+          {result?.employeeNumber ?? employeeNumber}
         </SummaryItem>
         <SummaryItem icon={<ResultIcon src={correctIcon} />} label="정답">
-          {result.correctAnswers}
+          {result?.correctAnswers ?? "—"}
         </SummaryItem>
         <SummaryItem icon={<ResultIcon src={incorrectIcon} />} label="오답">
-          {wrongAnswers}
+          {result ? wrongAnswers : "—"}
         </SummaryItem>
         <SummaryItem icon={<ResultIcon src={neutralIcon} />} label="정답률">
-          {accuracyPercent}%{" "}
+          {result ? `${accuracyPercent}%` : "—"}{" "}
           <small>
-            ({result.correctAnswers}/{totalQuestions})
+            {result ? `(${result.correctAnswers}/${totalQuestions})` : ""}
           </small>
         </SummaryItem>
         <SummaryItem icon={<ResultIcon src={clockIcon} />} label="총 소요 시간">
-          {result.totalTime}
+          {result?.totalTime ?? "—"}
         </SummaryItem>
         <SummaryItem icon={<ResultIcon src={clipboardIcon} />} label="총 문제" boxed>
-          {totalQuestions}문제
+          {result ? `${totalQuestions}문제` : "—"}
         </SummaryItem>
       </header>
 
@@ -224,6 +216,9 @@ export default function ResultsScreen({
           <ResultIcon src={homeIcon} /> 처음으로 돌아가기
         </button>
       </section>
+      {isLoading && (
+        <LoadingModal title="해설을 불러오고 있어요" description="문제별 결과와 해설을 확인하는 중입니다." />
+      )}
     </main>
   );
 }
