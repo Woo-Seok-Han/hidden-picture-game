@@ -1,10 +1,12 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
+import { useGameContext } from "../../../context/GameContext";
+import { getResultImageUrl } from "../data/resultImage";
+
 const celebrationImage = "https://img.flickrlab.com/cdn-cgi/image/format=webp/assets/complete-celebration-v1.webp";
 const correctIcon = "https://img.flickrlab.com/cdn-cgi/image/format=webp/assets/complete-correct-icon-v1.webp";
 const magnifierImage = "https://img.flickrlab.com/cdn-cgi/image/format=webp/assets/complete-magnifier-v1.webp";
 const siteIcon = "https://img.flickrlab.com/cdn-cgi/image/format=webp/assets/complete-site-icon-v1.webp";
 const timeIcon = "https://img.flickrlab.com/cdn-cgi/image/format=webp/assets/complete-time-icon-v1.webp";
-import { useGameContext } from "../../../context/GameContext";
 
 interface CompleteScreenProps { onResults: () => void; }
 
@@ -20,6 +22,42 @@ function Metric({ icon, label, value }: { icon: ReactNode; label: string; value:
 
 export default function CompleteScreen({ onResults }: CompleteScreenProps) {
   const { gameResult } = useGameContext();
+  useEffect(() => {
+    let cancelled = false;
+    const urls = [...new Set(
+      (gameResult?.details ?? []).map((detail) => getResultImageUrl(detail.imageUrl)).filter(Boolean),
+    )];
+
+    async function preloadResults() {
+      // Warm one thumbnail at a time without delaying the results button.
+      for (const url of urls) {
+        if (cancelled) return;
+        const image = new Image();
+        image.fetchPriority = "low";
+        image.decoding = "async";
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
+        try {
+          await new Promise<void>((resolve, reject) => {
+            image.onload = () => resolve();
+            image.onerror = () => reject(new Error("Thumbnail preload failed"));
+            timeoutId = setTimeout(() => reject(new Error("Thumbnail preload timed out")), 10000);
+            image.src = url;
+          });
+          if (!cancelled && typeof image.decode === "function") await image.decode();
+        } catch {
+          // The results screen can retry; a failed preview must not block navigation.
+        } finally {
+          clearTimeout(timeoutId);
+          image.onload = null;
+          image.onerror = null;
+        }
+      }
+    }
+
+    void preloadResults();
+    return () => { cancelled = true; };
+  }, [gameResult]);
+
   const totalQuestions = gameResult?.totalQuestions ?? 0;
   const correctAnswers = gameResult?.correctAnswers ?? 0;
   const totalTime = gameResult?.totalTime ?? "--:--";

@@ -4,6 +4,7 @@ import { fetchUserResults } from "../../../api/gameService";
 import type { GameResult, QuestionDetail } from "../../../api/gameService";
 import { useGameContext } from "../../../context/GameContext";
 import LoadingModal from "./LoadingModal";
+import { getResultImageUrl } from "../data/resultImage";
 import participantIcon from "../../../assets/results/participant.svg";
 import correctIcon from "../../../assets/results/correct.svg";
 import incorrectIcon from "../../../assets/results/incorrect.svg";
@@ -151,7 +152,7 @@ export default function ResultsScreen({
               <div className="result-image">
                 {item.imageUrl ? (
                   <>
-                    <img src={item.imageUrl} alt={`${item.title} 이미지`} />
+                    <img src={getResultImageUrl(item.imageUrl)} decoding="async" alt={`${item.title} 이미지`} />
                     {item.errorAreas?.map((area, areaIndex) => (
                       <span
                         key={`${item.questionId}-${areaIndex}`}
