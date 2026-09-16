@@ -277,9 +277,9 @@ async function loadUserResults(employeeNumber: string): Promise<GameResult | nul
   }
 }
 
-export async function fetchAdminQuestions(): Promise<AdminQuestion[]> {
+export async function fetchAdminQuestions(signal?: AbortSignal): Promise<AdminQuestion[]> {
   try {
-    const response = await fetch(API_ENDPOINTS.admin.questions);
+    const response = await fetch(API_ENDPOINTS.admin.questions, { signal });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }

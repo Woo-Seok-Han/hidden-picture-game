@@ -10,6 +10,7 @@ import {
 import type { AdminQuestion } from "../../../api/gameService";
 import type { ErrorArea, QuestionForm } from "../../../domain/question/types";
 import ErrorAreaEditor from "../components/ErrorAreaEditor";
+import ImageCacheModal from "../components/ImageCacheModal";
 
 const initialForm: QuestionForm = {
   imageFile: null,
@@ -20,6 +21,7 @@ const initialForm: QuestionForm = {
 };
 
 export default function AdminQuestionPage() {
+  const [isCacheModalOpen, setIsCacheModalOpen] = useState(false);
   const [form, setForm] = useState<QuestionForm>(initialForm);
   const [questions, setQuestions] = useState<AdminQuestion[]>([]);
   const [activeTab, setActiveTab] = useState<"create" | "manage">("create");
@@ -453,6 +455,11 @@ export default function AdminQuestionPage() {
               출제 가능 {questions.filter((question) => question.active).length}
               문제
             </span>
+            <button type="button" className="primary-admin-button cache-start-button"
+              disabled={isCacheModalOpen || isLoadingQuestions || !!questionListError || questions.length === 0}
+              onClick={() => setIsCacheModalOpen(true)}>
+              전체 이미지 캐시 준비
+            </button>
           </div>
 
           {message && <p className="admin-message">{message}</p>}
@@ -508,6 +515,7 @@ export default function AdminQuestionPage() {
           )}
         </section>
       )}
+      {isCacheModalOpen && <ImageCacheModal onClose={() => setIsCacheModalOpen(false)} />}
     </main>
   );
 }

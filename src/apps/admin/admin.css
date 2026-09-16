@@ -430,9 +430,74 @@ textarea {
 
 .management-summary {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 18px;
   margin-bottom: 18px;
+}
+
+.cache-start-button { margin-left: auto; }
+
+.image-cache-modal {
+  width: min(460px, calc(100vw - 32px));
+  max-height: calc(100svh - 32px);
+  padding: 32px;
+  overflow-y: auto;
+  border: 1px solid #e4e7ec;
+  border-radius: 20px;
+  background: #fff;
+  color: #101828;
+  box-shadow: 0 24px 64px rgb(16 24 40 / 20%);
+  text-align: center;
+}
+
+.image-cache-modal::backdrop { background: rgb(16 24 40 / 55%); }
+.image-cache-modal h2 { margin: 20px 0 12px; font-size: 24px; }
+.image-cache-modal p { color: #667085; line-height: 1.6; font-size: 14px; }
+.image-cache-modal > button { width: 100%; margin-top: 20px; }
+.cache-status-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin: 0 auto;
+  border: 4px solid #d1e9ff;
+  border-radius: 50%;
+  color: #175cd3;
+  font-size: 28px;
+  font-weight: 800;
+}
+.cache-status-icon.is-spinning {
+  border-top-color: #175cd3;
+  animation: cache-spin 1s linear infinite;
+}
+.image-cache-modal progress {
+  display: block;
+  width: 100%;
+  height: 10px;
+  margin: 24px 0 10px;
+  overflow: hidden;
+  border: none;
+  border-radius: 999px;
+  background: #eaecf0;
+  accent-color: #175cd3;
+}
+.image-cache-modal progress::-webkit-progress-bar { background: #eaecf0; }
+.image-cache-modal progress::-webkit-progress-value { background: #175cd3; transition: width .25s ease; }
+.image-cache-modal progress::-moz-progress-bar { background: #175cd3; }
+.cache-progress-label, .cache-counts { display: flex; justify-content: space-between; gap: 16px; font-size: 14px; }
+.cache-progress-label strong { color: #175cd3; }
+.cache-counts { margin-top: 22px; padding: 16px; border-radius: 10px; background: #f9fafb; }
+.cache-counts strong { margin-left: 8px; }
+.image-cache-modal .cache-help { margin: 20px 0 0; font-size: 12px; }
+@keyframes cache-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .cache-status-icon.is-spinning { animation: none; }
+  .image-cache-modal progress::-webkit-progress-value { transition: none; }
+}
+@media (max-width: 600px) {
+  .cache-start-button { width: 100%; margin-left: 0; }
+  .image-cache-modal { padding: 24px; }
 }
 
 .management-summary strong {
