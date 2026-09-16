@@ -735,7 +735,7 @@
   align-items: center;
   min-height: 100svh;
   overflow: hidden;
-  background: url("../../assets/game-complete-background-v1.png") center / cover
+  background: url("https://img.flickrlab.com/cdn-cgi/image/format=webp/assets/game-complete-background-v1.webp") center / cover
     no-repeat;
   color: #061d4c;
 }
@@ -1147,7 +1147,7 @@
         rgb(246 249 255 / 88%),
         rgb(246 249 255 / 88%)
       ),
-      url("../../assets/game-complete-background-v1.png");
+      url("https://img.flickrlab.com/cdn-cgi/image/format=webp/assets/game-complete-background-v1.webp");
   }
   .complete-celebration {
     opacity: 0.65;

@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
-import celebrationImage from "../../../assets/complete-celebration-v1.png";
-import correctIcon from "../../../assets/complete-correct-icon-v1.png";
-import magnifierImage from "../../../assets/complete-magnifier-v1.png";
-import siteIcon from "../../../assets/complete-site-icon-v1.png";
-import timeIcon from "../../../assets/complete-time-icon-v1.png";
+const celebrationImage = "https://img.flickrlab.com/cdn-cgi/image/format=webp/assets/complete-celebration-v1.webp";
+const correctIcon = "https://img.flickrlab.com/cdn-cgi/image/format=webp/assets/complete-correct-icon-v1.webp";
+const magnifierImage = "https://img.flickrlab.com/cdn-cgi/image/format=webp/assets/complete-magnifier-v1.webp";
+const siteIcon = "https://img.flickrlab.com/cdn-cgi/image/format=webp/assets/complete-site-icon-v1.webp";
+const timeIcon = "https://img.flickrlab.com/cdn-cgi/image/format=webp/assets/complete-time-icon-v1.webp";
 import { useGameContext } from "../../../context/GameContext";
 
 interface CompleteScreenProps { onResults: () => void; }
